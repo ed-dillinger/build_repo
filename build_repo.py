@@ -38,9 +38,12 @@ parser.add_option("-l", "--list", action="store_true", dest="LIST", help="List A
 parser.add_option("-i", action="store_true", dest="Interactive", help="Full Interative mode", default=True)
 (options, args) = parser.parse_args()
 
+CONFIG_DIR = 'config'
+CONFIG_FILE = 'config/config.txt'
+
 # Load configuration from config/config.txt
 config = ConfigParser.ConfigParser()
-config.read('config/config.txt')
+config.read(CONFIG_FILE)
 
 #base_git_url = "git@%s:%s" % (config.get('git', 'git_host'), config.get('git', 'git_username'))
 addon_list = [ a.strip() for a in config.get('addons', 'addons_list').split(",")]
@@ -70,11 +73,11 @@ Check the repo is uptodate before we proceed.
 
 *'''
 
-#status = subprocess.check_output(['./check_repo', '']).strip()
-#if status != "Up-to-date":
-#	raise BuildException("Repository Status: %s" % status)	
-#	sys.exit()
-#
+status = subprocess.check_output(['./check_repo', '']).strip()
+if status != "Up-to-date":
+	raise BuildException("Repository Status: %s" % status)	
+	sys.exit()
+
 '''*
 
 Simple build script for maintaining repo versions and packaging addons for release.
@@ -90,12 +93,16 @@ Version prompts:
 
 ''' Define paths here '''
 root_dir = os.path.dirname(os.path.abspath(inspect.stack()[0][1]))
-addon_dir = os.path.join(root_dir, "addons")
-work_dir = os.path.join(root_dir, "work")
-if not os.path.exists(work_dir): os.mkdir(work_dir)
+addon_path = config.get('directories', 'output_dir')
+work_path = os.path.join(root_dir, "work")
+addon_dir = os.path.join(root_dir, addon_path)
+work_dir = os.path.join(root_dir, work_path)
+
+for d in [addon_dir, work_dir]:
+	if not os.path.exists(d): os.mkdir(d)
 
 ''' load version file if exists '''
-version_file = os.path.join("config/versions.json")
+version_file = os.path.join("%s/versions.json" % CONFIG_DIR)
 if os.path.exists(version_file):
 	version_list = json.loads(open(version_file, "r").read())
 else:
@@ -144,7 +151,16 @@ def md5(fname):
 			hash_md5.update(chunk)
 	return hash_md5.hexdigest()
 
-addons_tree = ET.parse(os.path.join(addon_dir, "addons.xml"))
+addons_path = os.path.join(addon_dir, "addons.xml")
+
+
+if not os.path.exists(addons_path):
+	print "addons.xml is missing"
+	print "writing blank template"
+	shutil.copy("config/addons.xml.template", addons_path)
+		
+	#raise BuildException('addons.xml missing')
+addons_tree = ET.parse(addons_path)
 addons_root = addons_tree.getroot()
 
 def compile_addon(addon_id):
@@ -159,8 +175,8 @@ def compile_addon(addon_id):
 	output_path = os.path.join(work_dir, addon_id)
 	shutil.rmtree(output_path, ignore_errors=True)
 	os.system("git clone %s %s" % (git_url, output_path))
-	shutil.rmtree("work/%s/.git" % addon_id, ignore_errors=True)
-	try: os.remove("work/%s/.gitignore" % addon_id)
+	shutil.rmtree("%s/%s/.git" % (work_path, addon_id), ignore_errors=True)
+	try: os.remove("%s/%s/.gitignore" % (work_path, addon_id))
 	except: pass
 	tree = ET.parse(os.path.join(output_path, "addon.xml"))
 	root = tree.getroot()
@@ -183,25 +199,25 @@ def compile_addon(addon_id):
 		if addon_id == a.get('id'):
 			addons_root.remove(a)
 	addons_root.append(root)
-	if not os.path.exists("addons/%s" % addon_id): os.mkdir("addons/%s" % addon_id)
+	if not os.path.exists("%s/%s" % (addon_path, addon_id)): os.mkdir("%s/%s" % (addon_path, addon_id))
 	''' update xml '''
 	print "Updating addons.xml file"
 	output_xml = os.path.join(output_path, "addon.xml")
-	dir_xml = os.path.join("addons/%s/addon.xml" % addon_id)
+	dir_xml = os.path.join("%s/%s/addon.xml" % (addon_path, addon_id))
 	if os.path.exists(output_xml): os.remove(output_xml)
 	if os.path.exists(dir_xml): os.remove(dir_xml)
 	tree.write(output_xml, xml_declaration=True, encoding='utf-8')
 	tree.write(dir_xml, xml_declaration=True, encoding='utf-8')
 	for f in ['fanart.jpg', 'icon.png']:
-		src = "work/%s/%s" % (addon_id, f)
+		src = "%s/%s/%s" % (work_path, addon_id, f)
 		if os.path.exists(src):
-			dst = "addons/%s/%s" % (addon_id, f)
+			dst = "%s/%s/%s" % (addon_path, addon_id, f)
 			shutil.copy(src, dst)
-	output_zip = "addons/%s/%s-%s.zip" % (addon_id, addon_id, version)
+	output_zip = "%s/%s/%s-%s.zip" % (addon_path, addon_id, addon_id, version)
 	if os.path.exists(output_zip):
 		os.remove(output_zip)
 	zipf = zipfile.ZipFile(output_zip, 'w', zipfile.ZIP_DEFLATED)
-	zipdir('work/%s' % addon_id, zipf, addon_id)
+	zipdir('%s/%s' % (work_path, addon_id), zipf, addon_id)
 	zipf.close()
 
 if __name__ == '__main__':
@@ -213,7 +229,7 @@ if __name__ == '__main__':
 		for addon_id in addon_list:
 			compile_addon(addon_id)
 
-	output_f = 'addons/addons.xml'
+	output_f = '%s/addons.xml' % addon_path
 	addons_tree.write(output_f, xml_declaration=True, encoding='utf-8')
 	check = md5(output_f)
 	print "Writing %s and md5" % output_f
@@ -222,14 +238,15 @@ if __name__ == '__main__':
 	open(version_file , 'w').write(json.dumps(version_list))
 
 	''' Add new files '''
-	os.system("git add addons")
+	os.system("git add %s" % addon_path)
 	message = strftime("Updated at %D %T")
 	os.system('git commit -a -m "%s"' % message)
 	c = raw_input("Push changes? [N]: ").strip()
 	if c.lower() == 'y':
 		os.system('git push')
-	
-	print "Complete!"
-	#print "Don't forget to commit your changes"
+		print "Complete!"
+	else:
+		print "Don't forget to commit your changes"
+
 
 
