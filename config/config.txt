@@ -6,6 +6,11 @@
 ;git_host = github.com
 ;git_username = gitusername
 
+[directories]
+# Directory specification. Leave these alone unless you have to change them.
+work_dir = work
+output_dir = addons
+
 [addons]
 # addons - A comma separated list of addons to include in the repo
 ;addons_list = plugin.video.test

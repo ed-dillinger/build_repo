@@ -40,12 +40,21 @@ parser.add_option("-i", action="store_true", dest="Interactive", help="Full Inte
 
 CONFIG_DIR = 'config'
 CONFIG_FILE = 'config/config.txt'
+class COLORS:
+	GRAY 	= '\033[1;30;40m'
+	RED 	= '\033[1;31;40m'
+	GREEN 	= '\033[1;32;40m'	
+	YELLOW 	= '\033[1;33;40m'
+	BLUE 	= '\033[1;34;40m'
+	MAGENTA = '\033[1;35;40m'
+	CYAN 	= '\033[1;36;40m'
+	WHITE 	= '\033[1;37;40m'
+	END 	= '\033[0m'
 
 # Load configuration from config/config.txt
 config = ConfigParser.ConfigParser()
 config.read(CONFIG_FILE)
 
-#base_git_url = "git@%s:%s" % (config.get('git', 'git_host'), config.get('git', 'git_username'))
 addon_list = [ a.strip() for a in config.get('addons', 'addons_list').split(",")]
 try:
 	user_map = {}
@@ -175,6 +184,9 @@ def compile_addon(addon_id):
 	output_path = os.path.join(work_dir, addon_id)
 	shutil.rmtree(output_path, ignore_errors=True)
 	os.system("git clone %s %s" % (git_url, output_path))
+	ref_path = "%s/%s/.git/packed-refs" % (work_path, addon_id)
+	with open(ref_path, "r") as ref:
+		cur_hash = re.search("(\S+)\srefs", ref.read()).group(1)
 	shutil.rmtree("%s/%s/.git" % (work_path, addon_id), ignore_errors=True)
 	try: os.remove("%s/%s/.gitignore" % (work_path, addon_id))
 	except: pass
@@ -186,12 +198,26 @@ def compile_addon(addon_id):
 		break
 	c = raw_input("Compile %s [N]: " % addon_name).strip()
 	if c.lower() != "y": return
-	if addon_id in version_list: cur_version = version_list[addon_id]
-	version = raw_input("%s Version [%s]: " % (addon_name, cur_version)).strip()
+	if addon_id in version_list:
+		cur_version = version_list[addon_id]["version"]
+		if 'hash' in version_list[addon_id]:
+			prev_hash = version_list[addon_id]['hash']
+		else:
+			prev_hash = ""
+	else:
+		cur_version = '0.0.0'
+		prev_hash = ''
+	prompt_string = "%s Version [%s]: " % (addon_name, cur_version)
+	if cur_hash == prev_hash:
+		prompt_string = COLORS.GREEN + prompt_string + COLORS.END
+	else:
+		prompt_string = COLORS.RED + prompt_string + COLORS.END
+	version = raw_input(prompt_string).strip()
 	version = get_version(version, cur_version)
 	if not version: raise BuildException("Version Error: Invalid version format.")
 	print "Setting %s version to %s" % (addon_name, version)
-	version_list[addon_id] = version
+	version_list[addon_id]["version"] = version
+	version_list[addon_id]["hash"] = cur_hash
 	for addon in root.iter('addon'):
 		addon.set('version', version)
 		break
