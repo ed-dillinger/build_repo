@@ -84,8 +84,26 @@ Check the repo is uptodate before we proceed.
 
 status = subprocess.check_output(['./check_repo', '']).strip()
 if status != "Up-to-date":
-	raise BuildException("Repository Status: %s" % status)	
-	sys.exit()
+	print "Repository is out of sync with remote"
+	if status == "Need to push":
+		print "Local is ahead of remote."
+		print "Push required to sync."
+		c = raw_input(COLORS.MAGENTA + "Push changes now?" + COLORS.END + " [N]: ").strip()
+		if c.lower() == 'y':
+			os.system('git push')
+		else:
+			raise BuildException("Repository Status: %s" % status)	
+			sys.exit()
+	elif status == "Need to pull":
+		print "Local is behind remote."
+		print "Pull required to sync."
+		c = raw_input(COLORS.MAGENTA + "Pull now?" + COLORS.END + " [N]: ").strip()
+		if c.lower() == 'y':
+			os.system('git pull')
+	else:
+		raise BuildException("Repository Status: %s" % status)	
+		sys.exit()
+
 
 '''*
 
@@ -264,15 +282,19 @@ if __name__ == '__main__':
 	open(version_file , 'w').write(json.dumps(version_list))
 
 	''' Add new files '''
-	os.system("git add %s" % addon_path)
-	message = strftime("Updated at %D %T")
-	os.system('git commit -a -m "%s"' % message)
-	c = raw_input("Push changes? [N]: ").strip()
+	c = raw_input(COLORS.YELLOW + "Commit changes?" + COLORS.END + " [Y]: ").strip()
+	if c.lower() != 'n':
+		os.system("git add %s" % addon_path)
+		message = strftime("Updated at %D %T")
+		os.system('git commit -a -m "%s"' % message)
+	else:
+		sys.exit()
+	c = raw_input(COLORS.YELLOW + "Push changes?" + COLORS.END + " [N]: ").strip()
 	if c.lower() == 'y':
 		os.system('git push')
 		print "Complete!"
 	else:
-		print "Don't forget to commit your changes"
+		print COLORS.RED + "Don't forget to commit your changes" + COLORS.END
 
 
 
