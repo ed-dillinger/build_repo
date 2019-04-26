@@ -12,8 +12,8 @@ Options:
   -l, --list            List Addons
   -i                    Full Interative mode
 
-Configuration is through ./config.txt
-See ./config.txt for configuration details.
+Configuration is through ./config/config.txt
+See ./config/config.txt for configuration details.
 
 Interactive mode prompts for each configured ADDONID to compiled and the new version number.
 Finally changes are commited and pushed.
