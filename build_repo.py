@@ -303,10 +303,9 @@ if __name__ == '__main__':
 			c = raw_input(COLORS.RED + "Update script?" + COLORS.END + " [N]: ").strip()
 			if c.lower() == 'y':
 				print "Downloading new script from: %s" % remote
-				with open('build_repo.py.temp', "w") as f:
+				with open('build_repo.py', "w") as f:
 					r = requests.get(remote)
 					f.write(r.text)
-				os.rename('build_repo.py.temp', 'build_repo.py')
 		else:
 			print "build_repo.py is up to date"
 		sys.exit()
