@@ -10,6 +10,7 @@ Options:
                         Build a single specific Addon ID
   -b BUILDID, --build=BUILDID
                         Build a single specific Addon ID
+  -u, --update          Update build_addon Script
   -l, --list            Print List Addons of addons and exit
   -i                    Full Interative mode, default mode
   -d, --dry-run         Dry Run, Do not write any files or make commits
