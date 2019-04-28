@@ -41,6 +41,7 @@ Fairly simple.
 parser = OptionParser()
 parser.add_option("-a", "--addon", dest="AddonID", help="Build a single specific Addon ID")
 parser.add_option("-b", "--build", dest="BuildID", help="Build a single specific Addon ID")
+parser.add_option("-u", "--update", action="store_true", dest="Update", help="Update build_addon Script", default=False)
 parser.add_option("-l", "--list", action="store_true", dest="LIST", help="Print List Addons of addons and exit", default=False)
 parser.add_option("-i", action="store_true", dest="Interactive", help="Full Interative mode, default mode", default=True)
 parser.add_option("-d", "--dry-run", action="store_true", dest="DryRun", help="Dry Run, Do not write any files or make commits", default=False)
@@ -63,8 +64,10 @@ class COLORS:
 # Load configuration from config/config.txt
 config = ConfigParser.ConfigParser()
 config.read(CONFIG_FILE)
-
-addon_list = [ a.strip() for a in config.get('addons', 'addons_list').split(",")]
+try:
+	addon_list = [ a.strip() for a in config.get('addons', 'addons_list').split(",")]
+except:
+	addon_list = []
 try:
 	user_map = {}
 	temp = config.get('addons', 'user_map').split(",")
@@ -155,9 +158,14 @@ def zipdir(path, ziph, addon_id):
 
 def md5(fname):
 	hash_md5 = hashlib.md5()
-	with open(fname, "rb") as f:
-		for chunk in iter(lambda: f.read(4096), b""):
+	if fname.startswith("http"):
+		r = requests.get(fname, stream=True)
+		for chunk in r.iter_content(4096):
 			hash_md5.update(chunk)
+	else:
+		with open(fname, "rb") as f:
+			for chunk in iter(lambda: f.read(4096), b""):
+				hash_md5.update(chunk)
 	return hash_md5.hexdigest()
 
 
@@ -285,7 +293,22 @@ def output_xml():
 
 if __name__ == '__main__':
 
-	if options.LIST:
+	if options.Update:
+		print "Checking for update"
+		remote = "https://raw.githubusercontent.com/ed-dillinger/build_repo/master/build_repo.py"
+		hash_this = md5('./build_repo.py')
+		hash_remote = md5(remote)
+		if hash_remote != hash_this:
+			print "New script found"
+			c = raw_input(COLORS.RED + "Update script?" + COLORS.END + " [N]: ").strip()
+			if c.lower() == 'y':
+				print "Downloading new script from: %s" % remote
+				with open('build_repo.py.temp', "w") as f:
+					r = requests.get(remote)
+					f.write(r.text)
+				os.rename('build_repo.py.temp', 'build_repo.py')
+		sys.exit()
+	elif options.LIST:
 		print "Available addons in repository:"
 		for a in addon_list:
 			v = version_list[a] if a in version_list else 'None'
