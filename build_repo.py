@@ -307,6 +307,8 @@ if __name__ == '__main__':
 					r = requests.get(remote)
 					f.write(r.text)
 				os.rename('build_repo.py.temp', 'build_repo.py')
+		else:
+			print "build_repo.py is up to date"
 		sys.exit()
 	elif options.LIST:
 		print "Available addons in repository:"
