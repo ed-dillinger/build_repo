@@ -5,6 +5,11 @@
 # The basic git url to generate is:
 #	ssh protocol: git@{git_host}:{git_username}/
 #	http protocol: https://{git_host}/{git_username}/
+#
+# Alternatively you can use .netrc for username and password authentication over https
+#	machine github.com
+#	login gitusername
+#	password gitpassw0rd
 
 ;git_protocol = ssh
 ;git_host = github.com

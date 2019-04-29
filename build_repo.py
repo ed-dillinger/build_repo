@@ -44,6 +44,7 @@ parser.add_option("-b", "--build", dest="BuildID", help="Build a single specific
 parser.add_option("-u", "--update", action="store_true", dest="Update", help="Update build_addon Script", default=False)
 parser.add_option("-l", "--list", action="store_true", dest="LIST", help="Print List Addons of addons and exit", default=False)
 parser.add_option("-i", action="store_true", dest="Interactive", help="Full Interative mode, default mode", default=True)
+parser.add_option("--init", action="store_true", dest="INIT", help="Initialize a new addons.xml", default=False)
 parser.add_option("-d", "--dry-run", action="store_true", dest="DryRun", help="Dry Run, Do not write any files or make commits", default=False)
 parser.add_option("-v", "--verbose", action="store_true", dest="Verbose", help="Verbose output", default=False)
 (options, args) = parser.parse_args()
@@ -113,19 +114,41 @@ addons_path = os.path.join(addon_dir, "addons.xml")
 
 for d in [addon_dir, work_dir]: 
 	if not os.path.exists(d): os.mkdir(d)
-if not os.path.exists(addons_path):
+	
+if not os.path.exists(addons_path) and not options.INIT:
 	print "addons.xml is missing"
-	print "writing blank template"
-	shutil.copy("config/addons.xml.template", addons_path)
+	print "initialize with build_repo.py --init"
+	raise BuildException("addons.xml is missing")
+	#print "addons.xml is missing"
 
-addons_tree = ET.parse(addons_path)
-addons_root = addons_tree.getroot()
+if not options.INIT:
+	addons_tree = ET.parse(addons_path)
+	addons_root = addons_tree.getroot()
+	
+	''' load version file if exists '''
+	version_file = os.path.join("%s/versions.json" % CONFIG_DIR)
+	if os.path.exists(version_file): version_list = json.loads(open(version_file, "r").read())
+	else: version_list = {}
 
-''' load version file if exists '''
-version_file = os.path.join("%s/versions.json" % CONFIG_DIR)
-if os.path.exists(version_file): version_list = json.loads(open(version_file, "r").read())
-else: version_list = {}
-
+def init_repo():
+	print "Setup a new repository"
+	print "Enter the following for a basic github repository"
+	repo_id = raw_input("Repository id (Ex repository.kodi.addons): ").strip()
+	repo_name = raw_input("Repository Name (Ex My Kodi Addons): ").strip()
+	repo_owner = raw_input("Repository Author (Ex Kodi Guy): ").strip()
+	repo_user = raw_input("Github Username (Ex Kodi-Guy): ").strip()
+	repo_dir = raw_input("Github Directory (Ex Kodi-Addons): ").strip()
+	print ""
+	with open("config/addons.xml.github.template", "r") as f:
+		raw_xml = f.read()
+		output_xml = raw_xml.format(repo_id=repo_id, repo_name=repo_name, repo_owner=repo_owner, repo_user=repo_user, repo_dir=repo_dir)
+		print output_xml
+	c = raw_input("Does this look correct [Y]?: ").strip()
+	if c.lower() != "n":
+		print "writing output %s" % addons_path
+		open(addons_path, "w").write(output_xml)
+	#shutil.copy("config/addons.xml.template", addons_path)
+	
 def get_version(i,c):
 	if re.match("^\d+\.\d+\.\d+$", i):
 		return i
@@ -308,6 +331,10 @@ if __name__ == '__main__':
 					f.write(r.text)
 		else:
 			print "build_repo.py is up to date"
+		sys.exit()
+	elif options.INIT:
+		print "Initialize repo"
+		init_repo()
 		sys.exit()
 	elif options.LIST:
 		print "Available addons in repository:"
