@@ -1,10 +1,11 @@
-#build_repo.py
+**build_repo.py**
 
 build_repo is a configurable python script for automating management of a kodi repository hosted on a git server.
 
 Usage: build_repo.py [options]
 
 Options:
+```
   -h, --help            show this help message and exit
   -a ADDONID, --addon=ADDONID
                         Build a single specific Addon ID
@@ -13,20 +14,21 @@ Options:
   -u, --update          Update build_addon Script
   -l, --list            Print List Addons of addons and exit
   -i                    Full Interative mode, default mode
+  --init                Initialize a new addons.xml
   -d, --dry-run         Dry Run, Do not write any files or make commits
   -v, --verbose         Verbose output
-
+```
 
 Configuration is through ./config/config.txt
 See ./config/config.txt for configuration details.
 
 Interactive mode prompts for each configured ADDONID to compiled and the new version number.
 Addon versions are maintained through a versions file, ./config/versions.json.
-
+```
 Version prompts may be entered manually or incremented:
 	x.x.x: specify a specific version number
 	+: increment minor version x.x.(x+1)
 	++: increment major version x.(x+1).0
 	+++: increment build version (x+1).0.0
-
+```
 Finally changes are commited and pushed.
