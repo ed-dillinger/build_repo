@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="{repo_id}" name="{repo_name}" provider-name="{repo_owner}" version="1.0.0">
+    <extension name="{repo_name}" point="xbmc.addon.repository">
+        <info compressed="false">https://raw.githubusercontent.com/{repo_user}/{repo_dir}/master/addons/addons.xml</info>
+        <checksum>https://raw.githubusercontent.com/{repo_user}/{repo_dir}/master/addons/addons.xml.md5</checksum>
+        <datadir zip="true">https://raw.githubusercontent.com/{repo_user}/{repo_dir}/master/addons/</datadir>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary>Addons by {repo_owner}</summary>
+        <description>Addons by {repo_owner}.</description>
+        <platform>all</platform>
+    </extension>
+</addon>
