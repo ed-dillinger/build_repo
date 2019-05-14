@@ -45,6 +45,7 @@ parser.add_option("-u", "--update", action="store_true", dest="Update", help="Up
 parser.add_option("-l", "--list", action="store_true", dest="LIST", help="Print List Addons of addons and exit", default=False)
 parser.add_option("-i", action="store_true", dest="Interactive", help="Full Interative mode, default mode", default=True)
 parser.add_option("--init", action="store_true", dest="INIT", help="Initialize a new addons.xml", default=False)
+parser.add_option("-n", "--new", action="store_true", dest="NEW", help="Compile new addons", default=False)
 parser.add_option("-d", "--dry-run", action="store_true", dest="DryRun", help="Dry Run, Do not write any files or make commits", default=False)
 parser.add_option("-v", "--verbose", action="store_true", dest="Verbose", help="Verbose output", default=False)
 (options, args) = parser.parse_args()
@@ -233,7 +234,7 @@ def compile_addon(addon_id):
 		prompt_string = "{color}Compile {addon}{end} [N]: ".format(color=COLORS.GREEN, addon=addon_name, end=COLORS.END)
 	else:
 		prompt_string = "{color}Compile {addon}{end} [N]: ".format(color=COLORS.RED, addon=addon_name, end=COLORS.END)
-
+	if options.NEW and cur_hash == prev_hash: return
 	c = raw_input(prompt_string).strip()
 	if c.lower() != "y": return
 	
@@ -371,7 +372,7 @@ if __name__ == '__main__':
 		c = raw_input(COLORS.YELLOW + "Push changes?" + COLORS.END + " [N]: ").strip()
 		if c.lower() == 'y':
 			os.system('git push')
-			print "Job Complete!"
+			print COLORS.GREEN + "Job Complete!" + COLORS.END
 		else:
 			print COLORS.RED + "Don't forget to push your changes!" + COLORS.END
 
